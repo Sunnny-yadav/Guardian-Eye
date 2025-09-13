@@ -3,6 +3,7 @@ import { User } from "@/models/users.model";
 import { getCoordinates } from "@/helpers/geoCode";
 import { uploadImage } from "@/helpers/ImageUpload";
 import dbConnect from "@/dbConfig/dbConnect";
+import { AppError, handleApiError } from "@/helpers/errorHandeller";
 
 dbConnect();
 
@@ -18,8 +19,8 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get("avatar") as File;
-    if(file == null){
-        throw new Error("file not present")
+    if (file == null) {
+      throw new AppError("file not present", 400);
     }
     const {
       teamName,
@@ -46,7 +47,22 @@ export async function POST(request: NextRequest) {
         password,
       ].some((val) => val === "")
     ) {
-      throw new Error("All fields are requried");
+      throw new AppError("All fields are requried", 400);
+    }
+
+    const isEmailExisting = await User.findOne({
+      $or: [{ teamName }, { email }],
+    }).select("email teamName");
+
+    if (isEmailExisting) {
+      let matchedFiled;
+      for (const key of ["teamName", "email"]) {
+        if (isEmailExisting[key] === (key === "email" ? email : teamName)) {
+          matchedFiled = key;
+          break;
+        }
+      }
+      throw new AppError(`${matchedFiled} already exist`, 409);
     }
 
     const requiredAddress: RequriedAddressFields = await getCoordinates(
@@ -54,24 +70,23 @@ export async function POST(request: NextRequest) {
     );
 
     if (requiredAddress === null) {
-      throw new Error("capturing geocode failed");
+      throw new AppError("capturing geocode failed", 502);
     }
 
     const { name, display_name, lat, lon } = requiredAddress;
 
     const filteredAddress = {
-        actual_Address: name,
-        captured_Address: display_name,
-        latitude: lat,
-        longitude: lon,
-      };
+      actual_Address: name,
+      captured_Address: display_name,
+      latitude: lat,
+      longitude: lon,
+    };
 
     const uplaodedImageOnCloudinary = await uploadImage(file);
 
     if (uplaodedImageOnCloudinary === null) {
-      throw new Error("Uplaoding Image failed! Try again");
+      throw new AppError("Uplaoding Image failed! Try again", 502);
     }
-
 
     const user = await User.create({
       teamName,
@@ -87,10 +102,12 @@ export async function POST(request: NextRequest) {
     });
 
     if (Object.keys(user).length === 0) {
-      throw new Error("Registration Failed, Try Again");
+      throw new AppError("Registration Failed, Try Again", 500);
     }
 
-    return NextResponse.json(
+    const AccessToken = user.getAccessToken();
+
+    const response = NextResponse.json(
       {
         data: user,
       },
@@ -98,15 +115,15 @@ export async function POST(request: NextRequest) {
         status: 200,
       }
     );
+
+    response.cookies.set("AccessToken", AccessToken, { httpOnly: true });
+
+    return response;
   } catch (error) {
-    let errMsg = error instanceof Error ? error.message : error;
-    return NextResponse.json(
-      {
-        error: errMsg,
-      },
-      {
-        status: 400,
-      }
+    return handleApiError(
+      error,
+      "Registration attempt failed",
+      "Error Occured in api/register route"
     );
   }
-};
+}
