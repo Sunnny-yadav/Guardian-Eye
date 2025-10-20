@@ -22,17 +22,10 @@ const predictedResourcesSchema = new mongoose.Schema(
       min: 0,
       required: true,
     },
-    shelters: {
-      count: {
+    shelterCount: {
         type: Number,
         min: 0,
         required: true,
-      },
-      capacity: {
-        type: Number,
-        min: 0,
-        required: true,
-      },
     },
     civiliansToEvacuate: {
       type: Number,
