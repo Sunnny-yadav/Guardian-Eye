@@ -73,12 +73,7 @@ const alertSchema = new mongoose.Schema(
       type: climateDetailsSchema,
       required: true,
     },
-
-    physicalData: {
-      roadDensity: { type: Number, min: 0 },
-      accessibilityIndex: { type: Number, min: 0, max: 1 },
-    },
-
+    
     intensityPredicted: {
       type:IntensityDetails
     },
