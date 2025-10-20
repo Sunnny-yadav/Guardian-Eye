@@ -2,26 +2,37 @@ import mongoose from "mongoose";
 
 /**
  * @model regionMetaData
- * @description Stores static region data including coordinates, taluka, region, population density, and total population
+ * @description Stores static region data including pointNumber,point coordinates, taluka, regionName, population density, total population and the neighboruing node metrix for future use i.e evacuation route estimation
  */
 const regionMetaDataSchema = new mongoose.Schema(
   {
+    point: {
+      type: Number,
+      required: true,
+    },
+
     coordinates: {
       lat: { type: Number, required: true },
       lon: { type: Number, required: true },
     },
 
-    taluka: {
+    regionName: {
       type: String,
       required: true,
       trim: true,
     },
 
-    region: {
+    taluka: {
       type: String,
       required: true,
-      trim: true,
     },
+
+    neighboringNodes: [
+      {
+        type: Number,
+        required: true,
+      },
+    ],
 
     populationDensity: {
       type: Number,
@@ -34,6 +45,14 @@ const regionMetaDataSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
+
+    regionArea: {
+      type: Number,
+      required: true,
+    },
+
+    roadDensity: { type: Number , required: true},
+    accessibilityIndex: { type: Number , required: true},
   },
   {
     timestamps: true,
