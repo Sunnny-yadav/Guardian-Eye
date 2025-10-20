@@ -4,6 +4,7 @@ import { getCoordinates } from "@/helpers/geoCode";
 import { uploadImage } from "@/helpers/ImageUpload";
 import dbConnect from "@/dbConfig/dbConnect";
 import { AppError, handleApiError } from "@/helpers/errorHandeller";
+import { regionMetaData } from "@/models/regionMetaData.model";
 
 dbConnect();
 
@@ -21,12 +22,15 @@ export async function POST(request: NextRequest) {
     const file = formData.get("avatar") as File;
     if (file == null) {
       throw new AppError("file not present", 400);
-    }
+    };
+
+    console.log(Object.fromEntries(formData))
     const {
       teamName,
       email,
       phone,
       address,
+      centralRegion,
       rescueBoats,
       ambulances,
       humanRescueTeamSize,
@@ -40,6 +44,7 @@ export async function POST(request: NextRequest) {
         email,
         phone,
         address,
+        centralRegion,
         rescueBoats,
         ambulances,
         humanRescueTeamSize,
@@ -55,23 +60,35 @@ export async function POST(request: NextRequest) {
     }).select("email teamName");
 
     if (isEmailExisting) {
-      let matchedFiled;
-      for (const key of ["teamName", "email"]) {
-        if (isEmailExisting[key] === (key === "email" ? email : teamName)) {
-          matchedFiled = key;
-          break;
-        }
+      const existing = isEmailExisting.toObject();
+      let matchedField;
+      
+      if (
+        existing.email?.trim().toLowerCase() === email.toString().trim().toLowerCase()
+      ) {
+        matchedField = "email";
+      } else if (
+        existing.teamName?.trim().toLowerCase() === teamName.toString().trim().toLowerCase()
+      ) {
+        matchedField = "teamName";
       }
-      throw new AppError(`${matchedFiled} already exist`, 409);
+    
+      throw new AppError(`${matchedField} already exists`, 409);
     }
+    
 
-    const requiredAddress: RequriedAddressFields = await getCoordinates(
-      address as string
-    );
+    const [requiredAddress, CentralRegionCodes]: [
+      RequriedAddressFields,
+      { coordinates: { lat: number; lon: number } } | null
+    ] = await Promise.all([
+      getCoordinates(address as string),
+      regionMetaData.findOne({ regionName: centralRegion }).select("coordinates")
+    ]);
+    
 
-    if (requiredAddress === null) {
+    if (requiredAddress === null || CentralRegionCodes === null) {
       throw new AppError("capturing geocode failed", 502);
-    }
+    };
 
     const { name, display_name, lat, lon } = requiredAddress;
 
@@ -80,6 +97,12 @@ export async function POST(request: NextRequest) {
       captured_Address: display_name,
       latitude: lat,
       longitude: lon,
+    };
+
+    
+    const FilteredcentralRegion = {
+      lat:CentralRegionCodes?.coordinates.lat,
+      lon:CentralRegionCodes?.coordinates.lon
     };
 
     const uplaodedImageOnCloudinary = await uploadImage(file);
@@ -99,6 +122,7 @@ export async function POST(request: NextRequest) {
       humanRescueTeamSize: Number(humanRescueTeamSize),
       supplyTrucks: Number(supplyTrucks),
       password,
+      centralRegionGeoCode:FilteredcentralRegion
     });
 
     if (Object.keys(user).length === 0) {
