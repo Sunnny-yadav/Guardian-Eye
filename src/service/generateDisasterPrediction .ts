@@ -3,6 +3,7 @@ import { Alert } from "@/models/alert.model";
 import { collectIntensityData } from "./collectIntensityData";
 import { collectResourceData } from "./collectResourceData";
 import { ResourcePlan } from "@/models/resourcePlan.model";
+import { AppError } from "@/helpers/errorHandeller";
 
 interface Coordinates {
   lat: number;
@@ -54,7 +55,7 @@ export async function generateDisasterPrediciton(geoCode: Coordinates) {
       { session }  
     );
     if (!alertObj || alertObj.length === 0) {
-      throw new Error("Failed to create Alert record");
+      throw new AppError("Failed to create Alert record",500);
     }
 
     // create a resource document with session
@@ -66,7 +67,7 @@ export async function generateDisasterPrediciton(geoCode: Coordinates) {
       { session }
     );
     if (!predictedResourceObj || predictedResourceObj.length === 0) {
-      throw new Error("Failed to create ResourcePlan record");
+      throw new AppError("Failed to create ResourcePlan record",500);
     }
 
     // Commit transaction if everything succeeds
