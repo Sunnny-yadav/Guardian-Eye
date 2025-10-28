@@ -61,10 +61,9 @@ export default function Dashboard() {
   const [predictedResources, setPredictedResources] =
     useState<PredictedResources | null>(null);
   const [loading, setLoading] = useState(false);
-  const [region, setRegion] = useState<string | null>(null);
 
   const { user } = useUserContext();
-  console.log("I am dashboard", user);
+ 
 
   // Temporary data for visualizations
   const disasterTrendsData = [
@@ -135,16 +134,6 @@ export default function Dashboard() {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (user && Object.keys(user).length > 0) {
-      const value = getRegionName(
-        user.centralRegionGeoCode.lat,
-        user.centralRegionGeoCode.lon
-      );
-      setRegion(value);
-    }
-  }, [user]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -237,7 +226,7 @@ export default function Dashboard() {
                   <p className="text-sm font-semibold text-gray-900">
                     {user?.teamName}
                   </p>
-                  <p className="text-xs text-gray-500">{region}</p>
+                  <p className="text-xs text-gray-500">{user?.regionName}</p>
                 </div>
 
                 {/* Profile Image */}
