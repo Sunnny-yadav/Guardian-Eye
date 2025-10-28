@@ -1,5 +1,6 @@
 "use client"
 
+import getRegionName from "@/helpers/mapCoordinates";
 import { createContext , ReactNode, useContext, useState} from "react"
 
 interface Location {
@@ -38,7 +39,11 @@ export const UserContextProvider = ({children} : {children: ReactNode}) => {
     const [user, setUser] = useState<User | null>(null);
 
     const saveUserData = (data: User) => {
-        setUser(data);
+        const value = getRegionName(
+            data.centralRegionGeoCode.lat,
+            data.centralRegionGeoCode.lon
+          );
+        setUser({...data , regionName:value});
     };
 
     const logout = ()=>{
