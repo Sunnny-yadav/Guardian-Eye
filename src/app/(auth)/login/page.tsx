@@ -2,13 +2,18 @@
 import React, { useState } from "react";
 import { Shield, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
+import { useUserContext } from "@/context/UserContext";
+import { useRouter } from "next/navigation";
 
 const LoginPage = () => {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [loginData, setLoginData] = useState({
     email: '',
     password: ''
   });
+
+  const {saveUserData} = useUserContext(); 
 
   const handleLoginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setLoginData((prev)=> ({ ...loginData, [e.target.name]: e.target.value }));
@@ -16,8 +21,6 @@ const LoginPage = () => {
 
   const handleLoginSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    
-    console.log('Login:', loginData);
     
     if(!loginData.email || !loginData.password) {
       alert("Fill the incomplete Data");
@@ -35,15 +38,15 @@ const LoginPage = () => {
   
       if (!result.ok) {
         const errorData = await result.json();
-        throw new Error(errorData.message || 'Login failed');
+        console.log("errorData",errorData)
+        throw new Error(errorData.error || 'Login failed');
       }
   
-      const data = await result.json();
-      console.log('Login successful:', data);
-      alert('Login successful!');
+      const response = await result.json();
+      saveUserData(response.data);
+      // alert('Login successful!');
+      router.push("/dashboard");
       
-      // Redirect user or store auth token here
-      // Example: router.push('/dashboard');
       
     } catch (error) {
       console.error('Login error:', error);

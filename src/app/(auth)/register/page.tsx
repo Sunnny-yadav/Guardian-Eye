@@ -16,6 +16,8 @@ import {
   User,
 } from "lucide-react";
 import Link from "next/link";
+import { useUserContext } from "@/context/UserContext";
+import { useRouter } from "next/navigation";
 
 const regions = [
   "Sujanagar",
@@ -73,6 +75,8 @@ interface RegisterData {
 const RegistrationPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [formStep, setFormStep] = useState(1);
+  const {saveUserData} = useUserContext()
+  const router = useRouter();
 
   const [registerData, setRegisterData] = useState<RegisterData>({
     teamName: "",
@@ -131,11 +135,16 @@ const RegistrationPage = () => {
       });
 
       if (!result.ok) {
-        throw new Error('Registration failed');
+        const errorData = await result.json();
+        console.log("errorData",errorData)
+        throw new Error(errorData.error || 'Login failed');
       }
-    
-      const data = await result.json();
-      console.log('Success:', data);
+  
+      const response = await result.json();
+      saveUserData(response.data);
+      // alert('Login successful!');
+      router.push("/dashboard");
+      
       
     } catch (error) {
       console.error('Error:', error);
