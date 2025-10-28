@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     const data: LoginRequest = await request.json();
     const { email, password } = data;
 
-    const user = await User.findOne({ email }).select("email password");
+    const user = await User.findOne({ email });
     if (!user) {
       throw new AppError("user not found", 404);
     }
@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
 
     const response = NextResponse.json(
       {
+        data:user,
         message: "Login successful",
       },
       { status: 200 }

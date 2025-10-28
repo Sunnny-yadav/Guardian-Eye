@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       throw new AppError("file not present", 400);
     };
 
-    console.log(Object.fromEntries(formData))
+    
     const {
       teamName,
       email,
