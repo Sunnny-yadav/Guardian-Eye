@@ -23,6 +23,7 @@ interface Location {
     supplyTrucks: number;
     createdAt: string;
     updatedAt: string;
+    regionName:string;
     [key:string]:any
   };
 
