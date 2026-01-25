@@ -27,6 +27,7 @@ const IntensityDetails = new mongoose.Schema({
   rainfall:{
     type: String,
       enum: [
+        "extreme low",
         "High",
         "Low",
         "Moderate",
@@ -39,6 +40,7 @@ const IntensityDetails = new mongoose.Schema({
   flood:{
     type: String,
       enum: [
+        "extreme low",
         "High",
         "Low",
         "Moderate",
@@ -51,6 +53,7 @@ const IntensityDetails = new mongoose.Schema({
   cyclone:{
     type: String,
       enum: [
+        "extreme low",
         "High",
         "Low",
         "Moderate",
