@@ -18,6 +18,7 @@ import {
 import Link from "next/link";
 import { useUserContext } from "@/context/UserContext";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 const regions = [
   "Sujanagar",
@@ -108,8 +109,11 @@ const RegistrationPage = () => {
 
   const handleRegisterSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
+    const toastId = toast.loading("Creating your account, please wait...");
+  
     if (registerData.password !== registerData.confirmPassword) {
-      alert("Passwords do not match");
+      toast.dismiss(toastId);
+      toast.error("Passwords do not match");
       setFormStep(1);
       return;
     }
@@ -136,19 +140,19 @@ const RegistrationPage = () => {
 
       if (!result.ok) {
         const errorData = await result.json();
-        console.log("errorData",errorData)
         throw new Error(errorData.error || 'Login failed');
       }
   
       const response = await result.json();
       saveUserData(response.data);
-      // alert('Login successful!');
+      toast.dismiss(toastId);
+      toast.success("Account created successfully! Welcome aboard");
       router.push("/dashboard");
       
       
     } catch (error) {
-      console.error('Error:', error);
-      alert('Registration failed. Please try again.');
+      toast.dismiss(toastId)
+      toast.error(error instanceof Error ? error.message : 'Registration failed. Please try again.');
     }
 
   };

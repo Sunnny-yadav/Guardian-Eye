@@ -4,6 +4,7 @@ import { Shield, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useUserContext } from "@/context/UserContext";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 const LoginPage = () => {
   const router = useRouter();
@@ -21,9 +22,11 @@ const LoginPage = () => {
 
   const handleLoginSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
+    const toastId = toast.loading("Verifying credentials...")
     
     if(!loginData.email || !loginData.password) {
-      alert("Fill the incomplete Data");
+      toast.dismiss(toastId)
+      toast.error("Fill the incomplete Data");
       return;
     }
   
@@ -38,19 +41,19 @@ const LoginPage = () => {
   
       if (!result.ok) {
         const errorData = await result.json();
-        console.log("errorData",errorData)
-        throw new Error(errorData.error || 'Login failed');
+        throw new Error(errorData.error);
       }
   
       const response = await result.json();
       saveUserData(response.data);
-      // alert('Login successful!');
+      toast.dismiss(toastId);
+      toast.success('Login successful!');
       router.push("/dashboard");
       
       
     } catch (error) {
-      console.error('Login error:', error);
-      alert(error instanceof Error ? error.message : 'Login failed. Please try again.');
+      toast.dismiss(toastId)
+      toast.error(error instanceof Error ? error.message : 'Login failed. Please try again.');
     }
   };
 
