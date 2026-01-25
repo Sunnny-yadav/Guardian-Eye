@@ -28,8 +28,8 @@ export async function POST(request: NextRequest) {
       if (isAlreadyLocked.isLocked) {
         return NextResponse.json(
           {
-            message:
-              "Processing for this region is already in progress. Please wait for the response.",
+            message: "Processing for this region is already in progress. Please wait for the response.",
+            data:null
           },
           { status: 202 }
         );
@@ -69,7 +69,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        data: "Resources" in intensityDetails ? intensityDetails.Resources : " intensity data"
+        data: "Resources" in intensityDetails ? intensityDetails.Resources : " intensity data",
+        message: "Predicted resources shared successfully"
       },
       {
         status:200
