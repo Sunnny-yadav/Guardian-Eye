@@ -402,4 +402,22 @@ export async function POST(req: NextRequest){
     } catch (error) {
         return handleApiError(error, "Document seeding failed", "Document seeding failed: api/seeding/regionMetaData");
     }
-}
+};
+
+export async function GET(req: NextRequest){
+  try {
+     await regionMetaData.updateMany(
+      {}, // apply to all documents
+      [
+        {
+          $set: {
+            point: { $toString: "$point" },
+          },
+        },
+      ]
+    );
+      return NextResponse.json({message:`documents updated : `},{status: 200})
+  } catch (error) {
+      return handleApiError(error, "Document seeding failed", "Document seeding failed: api/seeding/regionMetaData");
+  }
+};
