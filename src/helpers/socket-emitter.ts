@@ -1,3 +1,7 @@
+/**
+ * @description SocektEmitter is a function which was developed to broadcast the alert to all the registred organization i.e request send from baceknd to frontend
+ */
+
 import { AppError } from "./errorHandeller";
 
 interface disasterEvent {
