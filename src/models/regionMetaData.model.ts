@@ -7,7 +7,7 @@ import mongoose from "mongoose";
 const regionMetaDataSchema = new mongoose.Schema(
   {
     point: {
-      type: Number,
+      type: String,
       required: true,
     },
 
