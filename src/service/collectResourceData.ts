@@ -3,16 +3,17 @@ import { regionMetaData } from "@/models/regionMetaData.model";
 interface Coordinates {
   lat: number;
   lon: number;
-};
+}
 
 interface Resources {
-    populationDensity?: number;
-    totalPopulation?: number;
-    regionArea?: number;
-    roadDensity?: number;
-    accessibilityIndex?: number;
-    [key: string]: any;
-  }
+  point?: number;
+  populationDensity?: number;
+  totalPopulation?: number;
+  regionArea?: number;
+  roadDensity?: number;
+  accessibilityIndex?: number;
+  [key: string]: any;
+}
 
 export async function collectResourceData(geoCode: Coordinates) {
   try {
@@ -25,34 +26,29 @@ export async function collectResourceData(geoCode: Coordinates) {
       throw new Error("Region metadata not found in database");
     }
 
-    const Resource_Modle_Input_Values: Resources = {};
-    const fields = [
-      "populationDensity",
-      "totalPopulation",
-      "regionArea",
-      "roadDensity",
-      "accessibilityIndex",
-    ];
-
-    Object.keys(regionData).forEach((key) => {
-      if (fields.includes(key)) {
-        Resource_Modle_Input_Values[key] = regionData[key];
-      }
-    });
+    const Resource_Modle_Input_Values: Resources = {
+      point: regionData.point,
+      populationDensity: regionData.populationDensity,
+      totalPopulation: regionData.totalPopulation,
+      regionArea: regionData.regionArea,
+      roadDensity: regionData.roadDensity,
+      accessibilityIndex: regionData.accessibilityIndex,
+    };
 
     const successObj = {
-        data: {
-            Resource_Modle_Input_Values:Resource_Modle_Input_Values,
-            regionId : regionData._id
-        },
-        success: true,
-      };
-      
-      return successObj;
+      data: {
+        Resource_Modle_Input_Values: Resource_Modle_Input_Values,
+        regionId: regionData._id,
+      },
+      success: true,
+    };
 
-
+    return successObj;
   } catch (error) {
-    let errMsg = error instanceof Error ? error.message : "service/collectResourceData failed";
-    return { err: errMsg, success: false , data: null};
+    let errMsg =
+      error instanceof Error
+        ? error.message
+        : "service/collectResourceData failed";
+    return { err: errMsg, success: false, data: null };
   }
 }
