@@ -15,7 +15,7 @@ export async function POST(req:NextRequest){
         const fifteenMinBackTime = new Date(time.getTime() - 15 * 60 * 1000);
        
         const recentEvent = await DisasterEvent.findOne({
-            name: "cyclone",
+            name: "Flood",
             createdAt: {
                 $gte:fifteenMinBackTime
             }
@@ -26,7 +26,7 @@ export async function POST(req:NextRequest){
         };
 
         const disasterObj = await DisasterEvent.create({
-            name:"cyclone",
+            name:"Flood",
             isBroadCasted:true
         });
     
