@@ -192,7 +192,7 @@ export default function GuardianEyeLanding() {
               </p>
               <div className="flex gap-4">
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-blue-600">99%</div>
+                  <div className="text-3xl font-bold text-blue-600">80%</div>
                   <div className="text-sm text-gray-600">Accuracy</div>
                 </div>
                 <div className="text-center">
