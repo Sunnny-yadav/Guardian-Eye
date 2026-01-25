@@ -63,33 +63,32 @@ class databaseConnection {
       } else {
         console.error("Failed to connect to MongoDB:", error);
       }
-        await this.handleConnectionError();
+      await this.handleConnectionError();
     }
   }
 
-    async handleConnectionError() {
-      if (this.retryCount < MAX_RETRY_Count) {
-        this.retryCount++;
-        console.log(
-          `Retrying Connection... Attempt ${this.retryCount} of ${MAX_RETRY_Count}`
-        );
-        await new Promise<void>((resolve) =>
-          setTimeout(() => {
-            resolve();
-          }, RETRY_INTERVAL)
-        );
-        return this.connect();
-      }else{
-          console.error(
-              `Failed to connect to MongoDB after ${MAX_RETRY_Count} attempts`
-            );
-            process.exit(1);
-      }
+  async handleConnectionError() {
+    if (this.retryCount < MAX_RETRY_Count) {
+      this.retryCount++;
+      console.log(
+        `Retrying Connection... Attempt ${this.retryCount} of ${MAX_RETRY_Count}`
+      );
+      await new Promise<void>((resolve) =>
+        setTimeout(() => {
+          resolve();
+        }, RETRY_INTERVAL)
+      );
+      return this.connect();
+    } else {
+      console.error(
+        `Failed to connect to MongoDB after ${MAX_RETRY_Count} attempts`
+      );
+      process.exit(1);
     }
+  }
 
   async handleDisconnection() {
-    
-    // Only reconnect if it was previously connected 
+    // Only reconnect if it was previously connected
     if (this.isConnected) {
       console.log("Attempting to reconnect to mongoDb...");
       this.connect();
