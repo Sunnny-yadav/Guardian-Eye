@@ -49,7 +49,7 @@ export async function collectIntensityData(geoCode: Coordinates) {
         (a: number, b: number) => a + b,
         0
       ),
-      seaSurfaceTemp: seaSurfaceData.current?.sea_surface_temperature,
+      seaSurfaceTemp: seaSurfaceData.current?.sea_surface_temperature ?? 28.0,
     };
 
     const successObj = {
