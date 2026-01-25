@@ -1,69 +1,19 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import {
-  Shield,
-  Bell,
-  LogOut,
-  Users,
-  Truck,
-  Ship,
-  Activity,
-  AlertTriangle,
-  Package,
-  TrendingUp,
-  MapPin,
-  CheckCircle,
-  X,
-  BarChart3,
-} from "lucide-react";
-import {
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
+import React, { useState } from "react";
+import { Shield, Bell, LogOut, Users, Truck, Ship, Activity, AlertTriangle, Package, TrendingUp, MapPin, CheckCircle, X, BarChart3, Plane, } from "lucide-react";
+import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { useUserContext } from "@/context/UserContext";
-import getRegionName from "@/helpers/mapCoordinates";
-
-interface PredictedResources {
-  disaster: {
-    type: string;
-    severity: string;
-    region: string;
-    affectedPopulation: number;
-  };
-  resources: {
-    rescueBoats: number;
-    ambulances: number;
-    medicalTeams: number;
-    supplyTrucks: number;
-    foodPackets: number;
-    waterLiters: number;
-    shelterTents: number;
-    blankets: number;
-  };
-  timeline: string;
-  priority: string;
-}
+import { useDisasterContext } from "@/context/DisasterContext";
+import { useSocektContext } from "@/context/SocketContext";
+import toast from "react-hot-toast";
 
 export default function Dashboard() {
-  const [showAlertModal, setShowAlertModal] = useState(true);
   const [alertAcknowledged, setAlertAcknowledged] = useState(false);
-  const [predictedResources, setPredictedResources] =
-    useState<PredictedResources | null>(null);
   const [loading, setLoading] = useState(false);
 
   const { user } = useUserContext();
- 
+  const { alertOccurred, updateAlertStatus, alertData, savePredictedResources, predictedResources, } = useDisasterContext();
+  const { socket } = useSocektContext();
 
   // Temporary data for visualizations
   const disasterTrendsData = [
@@ -76,9 +26,13 @@ export default function Dashboard() {
   ];
 
   const resourceDistributionData = [
-    { name: "Rescue Boats", value: user?.rescueBoats, color: "#3b82f6" },
-    { name: "Ambulances", value: user?.ambulances, color: "#ef4444" },
-    { name: "Supply Trucks", value: user?.supplyTrucks, color: "#f97316" },
+    { name: "Rescue Boats", value: user?.rescueBoats || 10, color: "#3b82f6" },
+    { name: "Ambulances", value: user?.ambulances || 8, color: "#ef4444" },
+    {
+      name: "Supply Trucks",
+      value: user?.supplyTrucks || 12,
+      color: "#f97316",
+    },
     {
       name: "Team Members",
       value: user?.humanRescueTeamSize,
@@ -95,42 +49,77 @@ export default function Dashboard() {
 
   const handleAcknowledge = async () => {
     setLoading(true);
+    const toastId = toast.loading("Processing disaster alert...");
     try {
-      // Replace with your actual API endpoint
-      const response = await fetch("/api/acknowledge-alert", {
+      const response = await fetch("/api/alert/resourcePrediction", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ alertId: "temp-alert-id" }),
+        body: JSON.stringify({
+          disasterEventId: alertData?.disasterId,
+          userId: user?._id,
+          geoCode: user?.centralRegionGeoCode,
+        }),
       });
 
-      // Simulate prediction data
-      setTimeout(() => {
-        setPredictedResources({
+      if (!response.ok ) {
+        const ErrResponse = await response.json();
+        throw new Error(ErrResponse.error);
+      }
+
+      const { data, message } = await response.json();
+
+      if (response.status === 202) {
+        toast.success(message);
+
+        setAlertAcknowledged(true);
+        updateAlertStatus();
+        setLoading(false);
+
+        return;
+      }
+
+      if (response.status === 200) {
+        toast.success("Resource prediction completed!", {
+          id: toastId,
+        });
+        savePredictedResources({
           disaster: {
             type: "Flood",
             severity: "High",
-            region: "Sujanagar",
-            affectedPopulation: 15000,
+            region: user?.regionName || "sujanagar",
+            civiliansToEvacuate: data?.predictedResources?.civiliansToEvacuate,
           },
           resources: {
-            rescueBoats: 25,
-            ambulances: 15,
-            medicalTeams: 8,
-            supplyTrucks: 20,
-            foodPackets: 45000,
-            waterLiters: 75000,
-            shelterTents: 500,
-            blankets: 3000,
+            rescueBoats: data?.predictedResources?.rescueBoats,
+            ambulances: data?.predictedResources?.ambulances,
+            humanRescueTeams: data?.predictedResources?.humanRescueTeams,
+            supplyTrucks: data?.predictedResources?.supplyTrucks,
+            shelterTents: data?.predictedResources?.shelterCount,
+            drones: data?.predictedResources?.drones,
           },
           timeline: "24-48 hours",
           priority: "Critical",
         });
+
         setAlertAcknowledged(true);
-        setShowAlertModal(false);
+        updateAlertStatus();
         setLoading(false);
-      }, 2000);
+
+        if (!socket) {
+          console.log(
+            "Broadcasting page::handleAcknowledgment():: socekt instance not found"
+          );
+          throw new Error(
+            "Broadcasting to other members of same region Failed"
+          );
+        } else if (predictedResources !== null) {
+          socket.emit("prediction-complete", predictedResources);
+        } 
+      }
     } catch (error) {
-      console.error("Error:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to process alert", {
+        id: toastId,
+      });
       setLoading(false);
     }
   };
@@ -138,16 +127,9 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Alert Modal */}
-      {showAlertModal && !alertAcknowledged && (
+      {alertOccurred && !alertAcknowledged && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8 relative animate-pulse">
-            <button
-              onClick={() => setShowAlertModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
-            >
-              <X className="w-6 h-6" />
-            </button>
-
             <div className="text-center">
               <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <AlertTriangle className="w-10 h-10 text-red-600" />
@@ -156,10 +138,11 @@ export default function Dashboard() {
                 Disaster Alert Detected!
               </h2>
               <p className="text-gray-600 mb-2">
-                <strong>Type:</strong> Severe Flood Warning
+                <strong>Type:</strong>{" "}
+                {`Severe ${alertData?.disasterName} Warning`}
               </p>
               <p className="text-gray-600 mb-2">
-                <strong>Region:</strong> Sujanagar & Surrounding Areas
+                <strong>Region:</strong> {user?.regionName}
               </p>
               <p className="text-gray-600 mb-2">
                 <strong>Severity:</strong>{" "}
@@ -321,7 +304,7 @@ export default function Dashboard() {
                   Predicted Resource Requirements
                 </h2>
                 <p className="text-sm text-gray-600">
-                  Based on {predictedResources?.disaster?.type} severity in{" "}
+                  Based on {predictedResources.disaster.type} severity in{" "}
                   {predictedResources.disaster.region}
                 </p>
               </div>
@@ -352,9 +335,11 @@ export default function Dashboard() {
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Affected Population:</span>
+                    <span className="text-gray-600">
+                      Civilians to Evacuate:
+                    </span>
                     <span className="font-semibold text-gray-900">
-                      {predictedResources.disaster.affectedPopulation.toLocaleString()}
+                        {predictedResources.disaster.civiliansToEvacuate}
                     </span>
                   </div>
                 </div>
@@ -388,7 +373,7 @@ export default function Dashboard() {
             </div>
 
             <h3 className="font-bold text-gray-900 mb-4">Required Resources</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div className="bg-white rounded-lg p-4 text-center">
                 <Ship className="w-8 h-8 text-blue-600 mx-auto mb-2" />
                 <div className="text-2xl font-bold text-gray-900">
@@ -406,9 +391,9 @@ export default function Dashboard() {
               <div className="bg-white rounded-lg p-4 text-center">
                 <Users className="w-8 h-8 text-green-600 mx-auto mb-2" />
                 <div className="text-2xl font-bold text-gray-900">
-                  {predictedResources.resources.medicalTeams}
+                  {predictedResources.resources.humanRescueTeams}
                 </div>
-                <div className="text-xs text-gray-600">Medical Teams</div>
+                <div className="text-xs text-gray-600">Human Rescue Teams</div>
               </div>
               <div className="bg-white rounded-lg p-4 text-center">
                 <Truck className="w-8 h-8 text-orange-600 mx-auto mb-2" />
@@ -418,20 +403,6 @@ export default function Dashboard() {
                 <div className="text-xs text-gray-600">Supply Trucks</div>
               </div>
               <div className="bg-white rounded-lg p-4 text-center">
-                <Package className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-gray-900">
-                  {predictedResources.resources.foodPackets.toLocaleString()}
-                </div>
-                <div className="text-xs text-gray-600">Food Packets</div>
-              </div>
-              <div className="bg-white rounded-lg p-4 text-center">
-                <Package className="w-8 h-8 text-cyan-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-gray-900">
-                  {predictedResources.resources.waterLiters.toLocaleString()}L
-                </div>
-                <div className="text-xs text-gray-600">Water Supply</div>
-              </div>
-              <div className="bg-white rounded-lg p-4 text-center">
                 <MapPin className="w-8 h-8 text-indigo-600 mx-auto mb-2" />
                 <div className="text-2xl font-bold text-gray-900">
                   {predictedResources.resources.shelterTents}
@@ -439,11 +410,11 @@ export default function Dashboard() {
                 <div className="text-xs text-gray-600">Shelter Tents</div>
               </div>
               <div className="bg-white rounded-lg p-4 text-center">
-                <Package className="w-8 h-8 text-pink-600 mx-auto mb-2" />
+                <Plane className="w-8 h-8 text-purple-600 mx-auto mb-2" />
                 <div className="text-2xl font-bold text-gray-900">
-                  {predictedResources.resources.blankets.toLocaleString()}
+                  {predictedResources.resources.drones}
                 </div>
-                <div className="text-xs text-gray-600">Blankets</div>
+                <div className="text-xs text-gray-600">Drones</div>
               </div>
             </div>
           </div>
