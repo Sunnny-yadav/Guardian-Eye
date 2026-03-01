@@ -22,6 +22,7 @@ interface PredictedResources {
     shelterTents: number;
     drones: number;
   };
+  resourcePlanId:string;
   timeline: string;
   priority: string;
 }

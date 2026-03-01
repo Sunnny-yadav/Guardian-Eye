@@ -97,6 +97,7 @@ export default function Dashboard() {
             shelterTents: data?.predictedResources?.shelterCount,
             drones: data?.predictedResources?.drones,
           },
+          resourcePlanId:data?._id,
           timeline: "24-48 hours",
           priority: "Critical",
         });
@@ -113,6 +114,7 @@ export default function Dashboard() {
             "Broadcasting to other members of same region Failed"
           );
         } else if (predictedResources !== null) {
+          console.log("The predicted results are: ",predictedResources);
           socket.emit("prediction-complete", predictedResources);
         } 
       }

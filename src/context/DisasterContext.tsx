@@ -24,6 +24,7 @@ interface PredictedResources {
       drones: number;               
      
     };
+    resourcePlanId:string;
     timeline: string;
     priority: string;
   };
