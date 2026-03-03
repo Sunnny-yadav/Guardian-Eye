@@ -37,6 +37,6 @@ export const  handleApiError = (
       errorMessage = prodMsg;
     }
   
-    return NextResponse.json({ error: errorMessage }, { status: statusCode });
+    return NextResponse.json({ error: errorMessage , success:"false"}, { status: statusCode });
   }
   
