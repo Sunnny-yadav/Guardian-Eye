@@ -35,7 +35,7 @@ export async function generateDisasterPrediciton(geoCode: Coordinates) {
     const formatedIntensityInput = intensityInputFormater(intensity_Modle_Input_Values);
 
     console.log("FormatedIntensityInput",formatedIntensityInput)
-    const intensityModelResponse = await fetch("https://ganeshnaik0108-intensity-disaster.hf.space/predict", {
+    const intensityModelResponse = await fetch(process.env.INTENSITY_PREDICTION_URL!, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -93,7 +93,7 @@ export async function generateDisasterPrediciton(geoCode: Coordinates) {
 
 
     // give the collected input to the model we will get the intensity and resource prediction
-    const response = await fetch("https://ganeshnaik0108-resource-prediction.hf.space/predict", {
+    const response = await fetch(process.env.RESOURCE_ESITMATION_URL!, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
