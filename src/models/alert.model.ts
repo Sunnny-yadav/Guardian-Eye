@@ -83,7 +83,7 @@ const alertSchema = new mongoose.Schema(
 
     regionMetaDataId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "RegionProfile",
+      ref: "regionMetaData",
     },
 
     disasterId:{
