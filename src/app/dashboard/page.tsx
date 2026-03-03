@@ -6,6 +6,7 @@ import { useUserContext } from "@/context/UserContext";
 import { useDisasterContext } from "@/context/DisasterContext";
 import { useSocektContext } from "@/context/SocketContext";
 import toast from "react-hot-toast";
+import Link from "next/link";
 
 export default function Dashboard() {
   const [alertAcknowledged, setAlertAcknowledged] = useState(false);
@@ -528,12 +529,14 @@ export default function Dashboard() {
                 View Alerts
               </div>
             </button>
-            <button className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition text-center">
+            <Link href="/evacuationMap" className="block">
+            <button className="p-4 w-full border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition text-center">
               <MapPin className="w-8 h-8 text-blue-600 mx-auto mb-2" />
               <div className="text-sm font-semibold text-gray-900">
                 Evacuation Routes
               </div>
             </button>
+            </Link>
             <button className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition text-center">
               <Package className="w-8 h-8 text-green-600 mx-auto mb-2" />
               <div className="text-sm font-semibold text-gray-900">
