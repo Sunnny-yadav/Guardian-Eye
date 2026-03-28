@@ -58,6 +58,18 @@ const userSchema = new mongoose.Schema(
         required: true, 
       },
     },
+
+    centralRegionGeoCode:{
+      lat:{
+        type:Number,
+        required:true
+      },
+      lon:{
+        type:Number,
+        required:true
+      }
+    },
+
     rescueBoats: {
       type: Number,
       default: 0,

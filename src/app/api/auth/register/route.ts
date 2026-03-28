@@ -3,6 +3,8 @@ import { User } from "@/models/users.model";
 import { getCoordinates } from "@/helpers/geoCode";
 import { uploadImage } from "@/helpers/ImageUpload";
 import dbConnect from "@/dbConfig/dbConnect";
+import { AppError, handleApiError } from "@/helpers/errorHandeller";
+import { regionMetaData } from "@/models/regionMetaData.model";
 
 dbConnect();
 
@@ -18,14 +20,17 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get("avatar") as File;
-    if(file == null){
-        throw new Error("file not present")
-    }
+    if (file == null) {
+      throw new AppError("file not present", 400);
+    };
+
+    
     const {
       teamName,
       email,
       phone,
       address,
+      centralRegion,
       rescueBoats,
       ambulances,
       humanRescueTeamSize,
@@ -39,6 +44,7 @@ export async function POST(request: NextRequest) {
         email,
         phone,
         address,
+        centralRegion,
         rescueBoats,
         ambulances,
         humanRescueTeamSize,
@@ -46,32 +52,64 @@ export async function POST(request: NextRequest) {
         password,
       ].some((val) => val === "")
     ) {
-      throw new Error("All fields are requried");
+      throw new AppError("All fields are requried", 400);
     }
 
-    const requiredAddress: RequriedAddressFields = await getCoordinates(
-      address as string
-    );
+    const isEmailExisting = await User.findOne({
+      $or: [{ teamName }, { email }],
+    }).select("email teamName");
 
-    if (requiredAddress === null) {
-      throw new Error("capturing geocode failed");
+    if (isEmailExisting) {
+      const existing = isEmailExisting.toObject();
+      let matchedField;
+      
+      if (
+        existing.email?.trim().toLowerCase() === email.toString().trim().toLowerCase()
+      ) {
+        matchedField = "email";
+      } else if (
+        existing.teamName?.trim().toLowerCase() === teamName.toString().trim().toLowerCase()
+      ) {
+        matchedField = "teamName";
+      }
+    
+      throw new AppError(`${matchedField} already exists`, 409);
     }
+    
+
+    const [requiredAddress, CentralRegionCodes]: [
+      RequriedAddressFields,
+      { coordinates: { lat: number; lon: number } } | null
+    ] = await Promise.all([
+      getCoordinates(address as string),
+      regionMetaData.findOne({ regionName: centralRegion }).select("coordinates")
+    ]);
+    
+
+    if (requiredAddress === null || CentralRegionCodes === null) {
+      throw new AppError("capturing geocode failed", 502);
+    };
 
     const { name, display_name, lat, lon } = requiredAddress;
 
     const filteredAddress = {
-        actual_Address: name,
-        captured_Address: display_name,
-        latitude: lat,
-        longitude: lon,
-      };
+      actual_Address: name,
+      captured_Address: display_name,
+      latitude: lat,
+      longitude: lon,
+    };
+
+    
+    const FilteredcentralRegion = {
+      lat:CentralRegionCodes?.coordinates.lat,
+      lon:CentralRegionCodes?.coordinates.lon
+    };
 
     const uplaodedImageOnCloudinary = await uploadImage(file);
 
     if (uplaodedImageOnCloudinary === null) {
-      throw new Error("Uplaoding Image failed! Try again");
+      throw new AppError("Uplaoding Image failed! Try again", 502);
     }
-
 
     const user = await User.create({
       teamName,
@@ -84,13 +122,16 @@ export async function POST(request: NextRequest) {
       humanRescueTeamSize: Number(humanRescueTeamSize),
       supplyTrucks: Number(supplyTrucks),
       password,
+      centralRegionGeoCode:FilteredcentralRegion
     });
 
     if (Object.keys(user).length === 0) {
-      throw new Error("Registration Failed, Try Again");
+      throw new AppError("Registration Failed, Try Again", 500);
     }
 
-    return NextResponse.json(
+    const AccessToken = user.getAccessToken();
+
+    const response = NextResponse.json(
       {
         data: user,
       },
@@ -98,15 +139,15 @@ export async function POST(request: NextRequest) {
         status: 200,
       }
     );
+
+    response.cookies.set("AccessToken", AccessToken, { httpOnly: true });
+
+    return response;
   } catch (error) {
-    let errMsg = error instanceof Error ? error.message : error;
-    return NextResponse.json(
-      {
-        error: errMsg,
-      },
-      {
-        status: 400,
-      }
+    return handleApiError(
+      error,
+      "Registration attempt failed",
+      "Error Occured in api/register route"
     );
   }
-};
+}

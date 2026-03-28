@@ -6,8 +6,14 @@ export async function getCoordinates(address: string) {
       throw new Error("geoCode.ts ::OpenStreetMap Nominatim key not found");
     }
     const response = await fetch(
-      `${process.env.NOMINATIM_URI}${encodeURIComponent(address)}`
+      `${process.env.NOMINATIM_URI}${encodeURIComponent(address)}`,
+      {
+        headers: {
+          "User-Agent": "GuardianEye/1.0 (yadavsunnyry@gmail.com)",
+        },
+      }
     );
+
 
     if (!response.ok) {
       throw new Error(`Nominatim request failed: ${response.status}`);
